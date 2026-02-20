@@ -1,0 +1,20 @@
+app = "your-url-shortener"
+primary_region = "ams"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  BASE_URL = "https://your-url-shortener.fly.dev"
+  DATABASE_URL = "sqlite+aiosqlite:///data/db.sqlite3"
+
+[http_service]
+  internal_port = 8000
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+[mounts]
+  source = "url_data"
+  destination = "/app/data"
