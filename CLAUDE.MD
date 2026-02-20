@@ -1,3 +1,12 @@
+## Session Notes / Lessons Learned
+
+- **NEVER start uvicorn (or any long-running server) as a background process in bash.** The background process keeps the command hanging indefinitely. Instead:
+  1. Use `pytest` with `httpx.AsyncClient` / ASGI transport (no server needed)
+  2. If you must hit a live server, start it with a strict timeout and `kill` it at the end of the same command
+- **Don't run complex commands unprompted.** Wait for the user to say what they want before launching into debugging/fixing.
+
+---
+
 # Advanced URL Shortener API
 
 Self-hosted TinyURL competitor with analytics – lightweight and private.

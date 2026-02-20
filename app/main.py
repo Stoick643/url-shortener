@@ -1,9 +1,13 @@
 from contextlib import asynccontextmanager
+from pathlib import Path
 
 from fastapi import FastAPI
+from fastapi.responses import HTMLResponse
 
 from app.database import init_db
 from app.routes import auth, links, redirect, stats
+
+STATIC_DIR = Path(__file__).parent / "static"
 
 
 @asynccontextmanager
@@ -18,6 +22,11 @@ app = FastAPI(
     version="1.0.0",
     lifespan=lifespan,
 )
+
+
+@app.get("/", response_class=HTMLResponse, include_in_schema=False)
+async def landing_page():
+    return (STATIC_DIR / "index.html").read_text()
 
 
 @app.get("/health", tags=["Health"])

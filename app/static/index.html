@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>URL Shortener</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #fafafa;
+            color: #333;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1.5rem;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 540px;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 0.3rem;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #888;
+            font-size: 0.95rem;
+            margin-bottom: 2rem;
+        }
+
+        .form-group {
+            display: flex;
+            gap: 0.5rem;
+            margin-bottom: 0.75rem;
+        }
+
+        input[type="url"], input[type="text"] {
+            flex: 1;
+            padding: 0.75rem 1rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 1rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        input:focus {
+            border-color: #333;
+        }
+
+        button {
+            padding: 0.75rem 1.5rem;
+            background: #333;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            white-space: nowrap;
+        }
+
+        button:hover { background: #555; }
+        button:disabled { background: #bbb; cursor: not-allowed; }
+
+        .advanced-toggle {
+            background: none;
+            color: #888;
+            font-size: 0.85rem;
+            font-weight: 400;
+            padding: 0;
+            margin-bottom: 0.75rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 0.3rem;
+        }
+
+        .advanced-toggle:hover { background: none; color: #555; }
+
+        .advanced-section {
+            display: none;
+            margin-bottom: 0.75rem;
+        }
+
+        .advanced-section.open { display: block; }
+
+        .advanced-section input {
+            width: 100%;
+        }
+
+        .slug-hint {
+            font-size: 0.8rem;
+            color: #aaa;
+            margin-top: 0.3rem;
+        }
+
+        /* Result */
+        .result {
+            display: none;
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-top: 1.5rem;
+            text-align: center;
+        }
+
+        .result.show { display: block; }
+
+        .result-label {
+            font-size: 0.85rem;
+            color: #888;
+            margin-bottom: 0.5rem;
+        }
+
+        .short-url {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #333;
+            word-break: break-all;
+            margin-bottom: 1rem;
+        }
+
+        .short-url a {
+            color: #333;
+            text-decoration: none;
+        }
+
+        .short-url a:hover { text-decoration: underline; }
+
+        .result-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: center;
+            margin-bottom: 1rem;
+        }
+
+        .btn-secondary {
+            padding: 0.5rem 1rem;
+            background: #f0f0f0;
+            color: #333;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn-secondary:hover { background: #e0e0e0; }
+
+        .copied {
+            background: #d4edda !important;
+            border-color: #b1dfbb !important;
+        }
+
+        .qr-container {
+            display: none;
+            margin-top: 1rem;
+        }
+
+        .qr-container.show { display: block; }
+
+        .qr-container img {
+            width: 200px;
+            height: 200px;
+            border-radius: 8px;
+        }
+
+        /* Error */
+        .error {
+            display: none;
+            background: #fff0f0;
+            border: 1px solid #fcc;
+            color: #c33;
+            border-radius: 8px;
+            padding: 0.75rem 1rem;
+            margin-top: 0.75rem;
+            font-size: 0.9rem;
+        }
+
+        .error.show { display: block; }
+
+        footer {
+            margin-top: 2rem;
+            font-size: 0.8rem;
+            color: #bbb;
+        }
+
+        footer a { color: #999; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>&#128279; URL Shortener</h1>
+        <p class="subtitle">Paste a long URL and get a short one</p>
+
+        <div class="form-group">
+            <input type="url" id="urlInput" placeholder="https://your-long-url.com/..." autofocus>
+            <button id="shortenBtn" onclick="shorten()">Shorten</button>
+        </div>
+
+        <button class="advanced-toggle" onclick="toggleAdvanced()">
+            <span id="advArrow">▸</span> Custom slug
+        </button>
+
+        <div class="advanced-section" id="advancedSection">
+            <input type="text" id="slugInput" placeholder="my-custom-slug (optional)">
+            <p class="slug-hint">3-30 characters, letters, numbers, and hyphens only</p>
+        </div>
+
+        <div class="error" id="error"></div>
+
+        <div class="result" id="result">
+            <p class="result-label">Your short link</p>
+            <p class="short-url"><a id="shortUrl" href="#" target="_blank"></a></p>
+            <div class="result-actions">
+                <button class="btn-secondary" id="copyBtn" onclick="copyUrl()">📋 Copy</button>
+                <button class="btn-secondary" onclick="toggleQr()">📱 QR Code</button>
+            </div>
+            <div class="qr-container" id="qrContainer">
+                <img id="qrImage" src="" alt="QR Code">
+            </div>
+        </div>
+    </div>
+
+    <footer>
+        Powered by <a href="/docs">URL Shortener API</a>
+    </footer>
+
+    <script>
+        const urlInput = document.getElementById('urlInput');
+        const slugInput = document.getElementById('slugInput');
+        const shortenBtn = document.getElementById('shortenBtn');
+        const resultDiv = document.getElementById('result');
+        const shortUrlLink = document.getElementById('shortUrl');
+        const errorDiv = document.getElementById('error');
+        const copyBtn = document.getElementById('copyBtn');
+        const qrContainer = document.getElementById('qrContainer');
+        const qrImage = document.getElementById('qrImage');
+
+        urlInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') shorten();
+        });
+
+        slugInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') shorten();
+        });
+
+        function toggleAdvanced() {
+            const section = document.getElementById('advancedSection');
+            const arrow = document.getElementById('advArrow');
+            section.classList.toggle('open');
+            arrow.textContent = section.classList.contains('open') ? '▾' : '▸';
+        }
+
+        async function shorten() {
+            const url = urlInput.value.trim();
+            if (!url) {
+                showError('Please enter a URL');
+                return;
+            }
+
+            shortenBtn.disabled = true;
+            shortenBtn.textContent = '...';
+            hideError();
+            resultDiv.classList.remove('show');
+            qrContainer.classList.remove('show');
+
+            const body = { url };
+            const slug = slugInput.value.trim();
+            if (slug) body.custom_slug = slug;
+
+            try {
+                const resp = await fetch('/links', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(body),
+                });
+
+                const data = await resp.json();
+
+                if (!resp.ok) {
+                    showError(data.detail || 'Something went wrong');
+                    return;
+                }
+
+                shortUrlLink.href = data.short_url;
+                shortUrlLink.textContent = data.short_url;
+                qrImage.src = `/${data.short_code}/qr`;
+                resultDiv.classList.add('show');
+                copyBtn.textContent = '📋 Copy';
+                copyBtn.classList.remove('copied');
+
+            } catch (err) {
+                showError('Could not connect to the server');
+            } finally {
+                shortenBtn.disabled = false;
+                shortenBtn.textContent = 'Shorten';
+            }
+        }
+
+        async function copyUrl() {
+            const url = shortUrlLink.href;
+            try {
+                await navigator.clipboard.writeText(url);
+                copyBtn.textContent = '✓ Copied!';
+                copyBtn.classList.add('copied');
+                setTimeout(() => {
+                    copyBtn.textContent = '📋 Copy';
+                    copyBtn.classList.remove('copied');
+                }, 2000);
+            } catch {
+                shortUrlLink.select && shortUrlLink.select();
+            }
+        }
+
+        function toggleQr() {
+            qrContainer.classList.toggle('show');
+        }
+
+        function showError(msg) {
+            errorDiv.textContent = msg;
+            errorDiv.classList.add('show');
+        }
+
+        function hideError() {
+            errorDiv.classList.remove('show');
+        }
+    </script>
+</body>
+</html>
