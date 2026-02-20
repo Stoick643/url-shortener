@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Link Stats</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #fafafa;
+            color: #333;
+            min-height: 100vh;
+            padding: 2rem 1.5rem;
+        }
+
+        .container {
+            max-width: 720px;
+            margin: 0 auto;
+        }
+
+        .back-link {
+            display: inline-block;
+            color: #888;
+            text-decoration: none;
+            font-size: 0.9rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .back-link:hover { color: #333; }
+
+        h1 {
+            font-size: 1.6rem;
+            font-weight: 700;
+            margin-bottom: 0.3rem;
+        }
+
+        .target-url {
+            color: #888;
+            font-size: 0.9rem;
+            word-break: break-all;
+            margin-bottom: 2rem;
+        }
+
+        .target-url a { color: #666; }
+
+        /* Stats cards */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .stat-card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 1.2rem;
+            text-align: center;
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: 700;
+            color: #333;
+        }
+
+        .stat-label {
+            font-size: 0.8rem;
+            color: #888;
+            margin-top: 0.2rem;
+        }
+
+        /* Sections */
+        .section {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .section h2 {
+            font-size: 1.1rem;
+            font-weight: 600;
+            margin-bottom: 1rem;
+        }
+
+        /* Bar chart */
+        .bar-chart {
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+        }
+
+        .bar-row {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .bar-label {
+            width: 100px;
+            font-size: 0.85rem;
+            color: #555;
+            text-align: right;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .bar-track {
+            flex: 1;
+            height: 24px;
+            background: #f0f0f0;
+            border-radius: 4px;
+            overflow: hidden;
+        }
+
+        .bar-fill {
+            height: 100%;
+            background: #333;
+            border-radius: 4px;
+            min-width: 2px;
+            transition: width 0.3s ease;
+        }
+
+        .bar-count {
+            width: 40px;
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        /* Click table */
+        .click-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .click-table th {
+            text-align: left;
+            color: #888;
+            font-weight: 600;
+            padding: 0.5rem 0.75rem;
+            border-bottom: 2px solid #eee;
+        }
+
+        .click-table td {
+            padding: 0.5rem 0.75rem;
+            border-bottom: 1px solid #f0f0f0;
+            color: #555;
+        }
+
+        .click-table tr:last-child td { border-bottom: none; }
+
+        .empty-state {
+            text-align: center;
+            color: #aaa;
+            padding: 2rem 0;
+            font-size: 0.95rem;
+        }
+
+        /* Loading & error */
+        .loading {
+            text-align: center;
+            color: #888;
+            padding: 3rem 0;
+        }
+
+        .error {
+            text-align: center;
+            color: #c33;
+            background: #fff0f0;
+            border: 1px solid #fcc;
+            border-radius: 8px;
+            padding: 1.5rem;
+        }
+
+        footer {
+            text-align: center;
+            margin-top: 2rem;
+            font-size: 0.8rem;
+            color: #bbb;
+        }
+
+        footer a { color: #999; }
+
+        .table-scroll {
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <a href="/" class="back-link">&#8592; Back to shortener</a>
+
+        <div id="content">
+            <div class="loading">Loading stats...</div>
+        </div>
+    </div>
+
+    <footer>
+        Powered by <a href="/docs">URL Shortener API</a>
+    </footer>
+
+    <script>
+        const shortCode = window.location.pathname.split('/')[1];
+
+        async function loadStats() {
+            const content = document.getElementById('content');
+
+            try {
+                const resp = await fetch(`/links/${shortCode}/stats/public`);
+
+                if (!resp.ok) {
+                    const data = await resp.json().catch(() => ({}));
+                    content.innerHTML = `<div class="error">${data.detail || 'Link not found'}</div>`;
+                    return;
+                }
+
+                const stats = await resp.json();
+                render(stats);
+                document.title = `Stats: ${shortCode}`;
+
+            } catch (err) {
+                content.innerHTML = '<div class="error">Could not load stats</div>';
+            }
+        }
+
+        function render(stats) {
+            const content = document.getElementById('content');
+
+            // Count by country
+            const countries = {};
+            const referrers = {};
+            stats.clicks.forEach(c => {
+                countries[c.country] = (countries[c.country] || 0) + 1;
+                const ref = c.referrer || 'Direct';
+                referrers[ref] = (referrers[ref] || 0) + 1;
+            });
+
+            const countrySorted = Object.entries(countries).sort((a, b) => b[1] - a[1]).slice(0, 10);
+            const referrerSorted = Object.entries(referrers).sort((a, b) => b[1] - a[1]).slice(0, 10);
+
+            // Created date
+            const created = new Date(stats.created_at).toLocaleDateString(undefined, {
+                year: 'numeric', month: 'short', day: 'numeric'
+            });
+
+            content.innerHTML = `
+                <h1>Stats for /${stats.short_code}</h1>
+                <p class="target-url">&#8594; <a href="${escHtml(stats.original_url)}" target="_blank">${escHtml(stats.original_url)}</a></p>
+
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.total_clicks}</div>
+                        <div class="stat-label">Total Clicks</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${stats.unique_clicks}</div>
+                        <div class="stat-label">Unique Clicks</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value">${created}</div>
+                        <div class="stat-label">Created</div>
+                    </div>
+                </div>
+
+                ${renderBarChart('Top Countries', countrySorted, stats.total_clicks)}
+                ${renderBarChart('Top Referrers', referrerSorted, stats.total_clicks)}
+                ${renderClickTable(stats.clicks)}
+            `;
+        }
+
+        function renderBarChart(title, entries, total) {
+            if (entries.length === 0) return '';
+
+            const maxVal = entries[0][1];
+            const bars = entries.map(([label, count]) => {
+                const pct = (count / maxVal * 100).toFixed(1);
+                const displayLabel = label.length > 30 ? label.substring(0, 27) + '...' : label;
+                return `
+                    <div class="bar-row">
+                        <span class="bar-label" title="${escHtml(label)}">${escHtml(displayLabel)}</span>
+                        <div class="bar-track">
+                            <div class="bar-fill" style="width: ${pct}%"></div>
+                        </div>
+                        <span class="bar-count">${count}</span>
+                    </div>
+                `;
+            }).join('');
+
+            return `
+                <div class="section">
+                    <h2>${title}</h2>
+                    <div class="bar-chart">${bars}</div>
+                </div>
+            `;
+        }
+
+        function renderClickTable(clicks) {
+            if (clicks.length === 0) {
+                return '<div class="section"><div class="empty-state">No clicks yet</div></div>';
+            }
+
+            const rows = clicks.slice(0, 50).map(c => {
+                const time = new Date(c.clicked_at).toLocaleString();
+                const ref = c.referrer
+                    ? `<a href="${escHtml(c.referrer)}" target="_blank" style="color:#555">${escHtml(truncate(c.referrer, 40))}</a>`
+                    : '<span style="color:#aaa">Direct</span>';
+                return `<tr><td>${time}</td><td>${escHtml(c.country)}</td><td>${ref}</td></tr>`;
+            }).join('');
+
+            return `
+                <div class="section">
+                    <h2>Recent Clicks</h2>
+                    <div class="table-scroll">
+                        <table class="click-table">
+                            <thead><tr><th>Time</th><th>Country</th><th>Referrer</th></tr></thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        function escHtml(str) {
+            const div = document.createElement('div');
+            div.textContent = str;
+            return div.innerHTML;
+        }
+
+        function truncate(str, len) {
+            return str.length > len ? str.substring(0, len - 3) + '...' : str;
+        }
+
+        loadStats();
+    </script>
+</body>
+</html>

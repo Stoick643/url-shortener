@@ -227,6 +227,7 @@
             <div class="result-actions">
                 <button class="btn-secondary" id="copyBtn" onclick="copyUrl()">&#128203; Copy</button>
                 <button class="btn-secondary" onclick="toggleQr()">&#128241; QR Code</button>
+                <a class="btn-secondary" id="statsLink" href="#" target="_blank" style="text-decoration:none; display:inline-block; line-height:1.4;">&#128202; Stats</a>
             </div>
             <div class="qr-container" id="qrContainer">
                 <img id="qrImage" src="" alt="QR Code">
@@ -298,6 +299,7 @@
                 shortUrlLink.href = data.short_url;
                 shortUrlLink.textContent = data.short_url;
                 qrImage.src = `/${data.short_code}/qr`;
+                document.getElementById('statsLink').href = `/${data.short_code}/stats`;
                 resultDiv.classList.add('show');
                 copyBtn.textContent = '\u{1F4CB} Copy';
                 copyBtn.classList.remove('copied');

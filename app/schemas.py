@@ -78,5 +78,20 @@ class StatsResponse(BaseModel):
     clicks: list[ClickResponse]
 
 
+class PublicClickResponse(BaseModel):
+    referrer: Optional[str]
+    country: str
+    clicked_at: datetime
+
+
+class PublicStatsResponse(BaseModel):
+    short_code: str
+    original_url: str
+    total_clicks: int
+    unique_clicks: int
+    created_at: datetime
+    clicks: list[PublicClickResponse]
+
+
 class MessageResponse(BaseModel):
     message: str

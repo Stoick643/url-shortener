@@ -5,7 +5,7 @@ from sqlalchemy import func, select
 from app.auth import verify_token
 from app.database import get_session
 from app.models import Click, Link
-from app.schemas import ClickResponse, StatsResponse
+from app.schemas import ClickResponse, PublicClickResponse, PublicStatsResponse, StatsResponse
 
 router = APIRouter(tags=["Stats"])
 
@@ -49,3 +49,51 @@ async def get_link_stats(
             for c in clicks
         ],
     )
+
+
+async def _fetch_public_stats(short_code: str, session: AsyncSession) -> PublicStatsResponse:
+    """Shared logic for fetching public stats (no ip_hash exposed)."""
+    result = await session.execute(select(Link).where(Link.short_code == short_code))
+    link = result.scalars().first()
+    if not link:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Link not found")
+
+    # Unique clicks
+    unique_result = await session.execute(
+        select(func.count(func.distinct(Click.ip_hash))).where(Click.link_id == link.id)
+    )
+    unique_clicks = unique_result.scalar_one()
+
+    # Recent clicks (last 100)
+    clicks_result = await session.execute(
+        select(Click)
+        .where(Click.link_id == link.id)
+        .order_by(Click.clicked_at.desc())
+        .limit(100)
+    )
+    clicks = clicks_result.scalars().all()
+
+    return PublicStatsResponse(
+        short_code=link.short_code,
+        original_url=link.original_url,
+        total_clicks=link.total_clicks,
+        unique_clicks=unique_clicks,
+        created_at=link.created_at,
+        clicks=[
+            PublicClickResponse(
+                referrer=c.referrer,
+                country=c.country,
+                clicked_at=c.clicked_at,
+            )
+            for c in clicks
+        ],
+    )
+
+
+@router.get("/links/{short_code}/stats/public", response_model=PublicStatsResponse)
+async def get_public_link_stats(
+    short_code: str,
+    session: AsyncSession = Depends(get_session),
+):
+    """Get public click analytics for a link. No authentication required, no IP hashes exposed."""
+    return await _fetch_public_stats(short_code, session)

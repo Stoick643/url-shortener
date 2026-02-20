@@ -1,13 +1,17 @@
 from datetime import datetime, timezone
 
+from pathlib import Path
+
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from fastapi.responses import RedirectResponse, Response
+from fastapi.responses import HTMLResponse, RedirectResponse, Response
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.database import get_session
 from app.models import Click, Link
 from app.utils import build_short_url, generate_qr_code_bytes, hash_ip
+
+STATIC_DIR = Path(__file__).parent.parent / "static"
 
 router = APIRouter(tags=["Redirect"])
 
@@ -34,6 +38,12 @@ async def _get_active_link(short_code: str, session: AsyncSession) -> Link:
         raise HTTPException(status_code=status.HTTP_410_GONE, detail="This link has reached its click limit")
 
     return link
+
+
+@router.get("/{short_code}/stats", response_class=HTMLResponse, include_in_schema=False)
+async def stats_page(short_code: str):
+    """Serve the public stats page for a short link."""
+    return (STATIC_DIR / "stats.html").read_text()
 
 
 @router.get("/{short_code}/qr", response_class=Response)
