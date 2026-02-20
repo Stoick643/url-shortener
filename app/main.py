@@ -19,13 +19,14 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
+
+@app.get("/health", tags=["Health"])
+async def health_check():
+    return {"status": "ok"}
+
+
 # Include routers - order matters: specific paths before catch-all /{short_code}
 app.include_router(auth.router)
 app.include_router(links.router)
 app.include_router(stats.router)
 app.include_router(redirect.router)
-
-
-@app.get("/health", tags=["Health"])
-async def health_check():
-    return {"status": "ok"}
