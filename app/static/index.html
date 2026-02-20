@@ -225,8 +225,8 @@
             <p class="result-label">Your short link</p>
             <p class="short-url"><a id="shortUrl" href="#" target="_blank"></a></p>
             <div class="result-actions">
-                <button class="btn-secondary" id="copyBtn" onclick="copyUrl()">📋 Copy</button>
-                <button class="btn-secondary" onclick="toggleQr()">📱 QR Code</button>
+                <button class="btn-secondary" id="copyBtn" onclick="copyUrl()">&#128203; Copy</button>
+                <button class="btn-secondary" onclick="toggleQr()">&#128241; QR Code</button>
             </div>
             <div class="qr-container" id="qrContainer">
                 <img id="qrImage" src="" alt="QR Code">
@@ -299,7 +299,7 @@
                 shortUrlLink.textContent = data.short_url;
                 qrImage.src = `/${data.short_code}/qr`;
                 resultDiv.classList.add('show');
-                copyBtn.textContent = '📋 Copy';
+                copyBtn.textContent = '\u{1F4CB} Copy';
                 copyBtn.classList.remove('copied');
 
             } catch (err) {
@@ -314,10 +314,10 @@
             const url = shortUrlLink.href;
             try {
                 await navigator.clipboard.writeText(url);
-                copyBtn.textContent = '✓ Copied!';
+                copyBtn.textContent = '\u2713 Copied!';
                 copyBtn.classList.add('copied');
                 setTimeout(() => {
-                    copyBtn.textContent = '📋 Copy';
+                    copyBtn.textContent = '\u{1F4CB} Copy';
                     copyBtn.classList.remove('copied');
                 }, 2000);
             } catch {
