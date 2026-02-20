@@ -29,6 +29,11 @@ async def landing_page():
     return (STATIC_DIR / "index.html").read_text()
 
 
+@app.get("/admin", response_class=HTMLResponse, include_in_schema=False)
+async def admin_dashboard():
+    return (STATIC_DIR / "admin.html").read_text()
+
+
 @app.get("/health", tags=["Health"])
 async def health_check():
     return {"status": "ok"}

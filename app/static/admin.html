@@ -1,0 +1,625 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Dashboard</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #fafafa;
+            color: #333;
+            min-height: 100vh;
+            padding: 1.5rem;
+        }
+
+        .container { max-width: 960px; margin: 0 auto; }
+
+        /* Login */
+        .login-wrapper {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 80vh;
+        }
+
+        .login-box {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 12px;
+            padding: 2.5rem;
+            width: 100%;
+            max-width: 380px;
+        }
+
+        .login-box h1 {
+            font-size: 1.4rem;
+            text-align: center;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-field {
+            margin-bottom: 1rem;
+        }
+
+        .form-field label {
+            display: block;
+            font-size: 0.85rem;
+            color: #555;
+            margin-bottom: 0.3rem;
+            font-weight: 600;
+        }
+
+        .form-field input {
+            width: 100%;
+            padding: 0.7rem 0.9rem;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            outline: none;
+            transition: border-color 0.2s;
+        }
+
+        .form-field input:focus { border-color: #333; }
+
+        .btn {
+            padding: 0.7rem 1.2rem;
+            background: #333;
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.95rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .btn:hover { background: #555; }
+        .btn:disabled { background: #bbb; cursor: not-allowed; }
+
+        .btn-full { width: 100%; }
+
+        .btn-sm {
+            padding: 0.35rem 0.7rem;
+            font-size: 0.8rem;
+            border-radius: 6px;
+        }
+
+        .btn-danger { background: #c33; }
+        .btn-danger:hover { background: #a22; }
+
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+            border: 1px solid #ddd;
+        }
+
+        .btn-secondary:hover { background: #e0e0e0; }
+
+        .login-error {
+            color: #c33;
+            font-size: 0.85rem;
+            text-align: center;
+            margin-top: 0.75rem;
+            display: none;
+        }
+
+        .login-error.show { display: block; }
+
+        /* Header */
+        .header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 1.5rem;
+            padding-bottom: 1rem;
+            border-bottom: 1px solid #eee;
+        }
+
+        .header h1 { font-size: 1.4rem; }
+
+        .header-actions { display: flex; gap: 0.5rem; align-items: center; }
+
+        /* Summary cards */
+        .summary {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .summary-card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .summary-value {
+            font-size: 1.6rem;
+            font-weight: 700;
+        }
+
+        .summary-label {
+            font-size: 0.8rem;
+            color: #888;
+        }
+
+        /* Links table */
+        .table-card {
+            background: #fff;
+            border: 1px solid #e0e0e0;
+            border-radius: 10px;
+            overflow: hidden;
+        }
+
+        .table-scroll { overflow-x: auto; }
+
+        .links-table {
+            width: 100%;
+            border-collapse: collapse;
+            font-size: 0.85rem;
+        }
+
+        .links-table th {
+            text-align: left;
+            font-weight: 600;
+            color: #888;
+            padding: 0.75rem 1rem;
+            border-bottom: 2px solid #eee;
+            white-space: nowrap;
+        }
+
+        .links-table td {
+            padding: 0.65rem 1rem;
+            border-bottom: 1px solid #f0f0f0;
+            vertical-align: middle;
+        }
+
+        .links-table tr:last-child td { border-bottom: none; }
+
+        .links-table tr:hover { background: #fafafa; }
+
+        .url-cell {
+            max-width: 250px;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .url-cell a { color: #555; text-decoration: none; }
+        .url-cell a:hover { text-decoration: underline; }
+
+        .code-cell a {
+            color: #333;
+            font-weight: 600;
+            text-decoration: none;
+        }
+
+        .code-cell a:hover { text-decoration: underline; }
+
+        .badge {
+            display: inline-block;
+            padding: 0.15rem 0.5rem;
+            border-radius: 999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+        }
+
+        .badge-active { background: #d4edda; color: #155724; }
+        .badge-inactive { background: #f8d7da; color: #721c24; }
+        .badge-vanity { background: #e2e3f1; color: #383d6e; }
+
+        .actions-cell {
+            display: flex;
+            gap: 0.3rem;
+            flex-wrap: nowrap;
+        }
+
+        /* Pagination */
+        .pagination {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            padding: 1rem;
+            border-top: 1px solid #eee;
+            font-size: 0.85rem;
+            color: #888;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            display: none;
+            position: fixed;
+            inset: 0;
+            background: rgba(0,0,0,0.4);
+            z-index: 100;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .modal-overlay.show { display: flex; }
+
+        .modal {
+            background: #fff;
+            border-radius: 12px;
+            padding: 2rem;
+            width: 90%;
+            max-width: 420px;
+        }
+
+        .modal h2 {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 0.5rem;
+            justify-content: flex-end;
+            margin-top: 1.5rem;
+        }
+
+        .empty-state {
+            text-align: center;
+            color: #aaa;
+            padding: 3rem 1rem;
+        }
+
+        .hidden { display: none !important; }
+    </style>
+</head>
+<body>
+
+<!-- Login Screen -->
+<div id="loginScreen" class="login-wrapper">
+    <div class="login-box">
+        <h1>&#128274; Admin Login</h1>
+        <div class="form-field">
+            <label>Username</label>
+            <input type="text" id="loginUser" autocomplete="username">
+        </div>
+        <div class="form-field">
+            <label>Password</label>
+            <input type="password" id="loginPass" autocomplete="current-password">
+        </div>
+        <button class="btn btn-full" id="loginBtn" onclick="doLogin()">Log in</button>
+        <p class="login-error" id="loginError"></p>
+    </div>
+</div>
+
+<!-- Dashboard -->
+<div id="dashboard" class="container hidden">
+    <div class="header">
+        <h1>&#128279; Link Dashboard</h1>
+        <div class="header-actions">
+            <a href="/" class="btn btn-sm btn-secondary" style="text-decoration:none;">&#8592; Home</a>
+            <button class="btn btn-sm btn-secondary" onclick="doLogout()">Log out</button>
+        </div>
+    </div>
+
+    <div class="summary" id="summary"></div>
+
+    <div class="table-card">
+        <div class="table-scroll">
+            <table class="links-table">
+                <thead>
+                    <tr>
+                        <th>Short Code</th>
+                        <th>Original URL</th>
+                        <th>Clicks</th>
+                        <th>Status</th>
+                        <th>Created</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="linksBody"></tbody>
+            </table>
+        </div>
+        <div id="emptyState" class="empty-state hidden">No links yet</div>
+        <div class="pagination" id="pagination"></div>
+    </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" id="editModal">
+    <div class="modal">
+        <h2>Edit Link</h2>
+        <input type="hidden" id="editCode">
+        <div class="form-field">
+            <label>Expires At (UTC)</label>
+            <input type="datetime-local" id="editExpiry">
+        </div>
+        <div class="form-field">
+            <label>Max Clicks (blank = unlimited)</label>
+            <input type="number" id="editMaxClicks" min="1" placeholder="unlimited">
+        </div>
+        <div class="modal-actions">
+            <button class="btn btn-sm btn-secondary" onclick="closeEditModal()">Cancel</button>
+            <button class="btn btn-sm" onclick="saveEdit()">Save</button>
+        </div>
+    </div>
+</div>
+
+<!-- Delete Confirm Modal -->
+<div class="modal-overlay" id="deleteModal">
+    <div class="modal">
+        <h2>Delete Link</h2>
+        <p>Are you sure you want to delete <strong id="deleteCode"></strong>? The link will return 410 Gone but analytics are preserved.</p>
+        <input type="hidden" id="deleteCodeValue">
+        <div class="modal-actions">
+            <button class="btn btn-sm btn-secondary" onclick="closeDeleteModal()">Cancel</button>
+            <button class="btn btn-sm btn-danger" onclick="confirmDelete()">Delete</button>
+        </div>
+    </div>
+</div>
+
+<script>
+    let token = sessionStorage.getItem('admin_token') || '';
+    let currentPage = 1;
+    const perPage = 15;
+
+    // Auto-login if token exists
+    if (token) {
+        showDashboard();
+    }
+
+    // Login
+    document.getElementById('loginPass').addEventListener('keydown', e => {
+        if (e.key === 'Enter') doLogin();
+    });
+
+    async function doLogin() {
+        const user = document.getElementById('loginUser').value.trim();
+        const pass = document.getElementById('loginPass').value;
+        const errEl = document.getElementById('loginError');
+        errEl.classList.remove('show');
+
+        if (!user || !pass) {
+            errEl.textContent = 'Please fill in both fields';
+            errEl.classList.add('show');
+            return;
+        }
+
+        const btn = document.getElementById('loginBtn');
+        btn.disabled = true;
+
+        try {
+            const resp = await fetch('/auth/login', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: user, password: pass }),
+            });
+
+            if (!resp.ok) {
+                const data = await resp.json().catch(() => ({}));
+                errEl.textContent = data.detail || 'Login failed';
+                errEl.classList.add('show');
+                return;
+            }
+
+            const data = await resp.json();
+            token = data.access_token;
+            sessionStorage.setItem('admin_token', token);
+            showDashboard();
+
+        } catch {
+            errEl.textContent = 'Could not connect to server';
+            errEl.classList.add('show');
+        } finally {
+            btn.disabled = false;
+        }
+    }
+
+    function doLogout() {
+        token = '';
+        sessionStorage.removeItem('admin_token');
+        document.getElementById('dashboard').classList.add('hidden');
+        document.getElementById('loginScreen').style.display = '';
+        document.getElementById('loginUser').value = '';
+        document.getElementById('loginPass').value = '';
+    }
+
+    async function showDashboard() {
+        document.getElementById('loginScreen').style.display = 'none';
+        document.getElementById('dashboard').classList.remove('hidden');
+        await loadLinks();
+    }
+
+    // API helper
+    async function api(path, opts = {}) {
+        const resp = await fetch(path, {
+            ...opts,
+            headers: {
+                'Content-Type': 'application/json',
+                'Authorization': `Bearer ${token}`,
+                ...(opts.headers || {}),
+            },
+        });
+
+        if (resp.status === 401) {
+            doLogout();
+            return null;
+        }
+
+        return resp;
+    }
+
+    // Load links
+    async function loadLinks() {
+        const resp = await api(`/links?page=${currentPage}&per_page=${perPage}`);
+        if (!resp) return;
+
+        const data = await resp.json();
+        renderSummary(data);
+        renderLinks(data);
+        renderPagination(data);
+    }
+
+    function renderSummary(data) {
+        const el = document.getElementById('summary');
+        const active = data.links.filter(l => l.is_active).length;
+        const totalClicks = data.links.reduce((s, l) => s + l.total_clicks, 0);
+
+        el.innerHTML = `
+            <div class="summary-card">
+                <div class="summary-value">${data.total}</div>
+                <div class="summary-label">Total Links</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value">${active}</div>
+                <div class="summary-label">Active (this page)</div>
+            </div>
+            <div class="summary-card">
+                <div class="summary-value">${totalClicks}</div>
+                <div class="summary-label">Clicks (this page)</div>
+            </div>
+        `;
+    }
+
+    function renderLinks(data) {
+        const body = document.getElementById('linksBody');
+        const empty = document.getElementById('emptyState');
+
+        if (data.links.length === 0) {
+            body.innerHTML = '';
+            empty.classList.remove('hidden');
+            return;
+        }
+
+        empty.classList.add('hidden');
+
+        body.innerHTML = data.links.map(link => {
+            const created = new Date(link.created_at).toLocaleDateString(undefined, {
+                month: 'short', day: 'numeric', year: 'numeric'
+            });
+
+            const statusBadge = link.is_active
+                ? '<span class="badge badge-active">Active</span>'
+                : '<span class="badge badge-inactive">Deleted</span>';
+
+            const vanityBadge = link.is_vanity
+                ? ' <span class="badge badge-vanity">Vanity</span>'
+                : '';
+
+            const expiry = link.expires_at
+                ? `<br><small style="color:#888">Exp: ${new Date(link.expires_at).toLocaleDateString()}</small>`
+                : '';
+
+            const maxClicks = link.max_clicks
+                ? `<br><small style="color:#888">Max: ${link.max_clicks}</small>`
+                : '';
+
+            return `
+                <tr>
+                    <td class="code-cell">
+                        <a href="/${esc(link.short_code)}/stats" target="_blank">${esc(link.short_code)}</a>
+                        ${vanityBadge}
+                    </td>
+                    <td class="url-cell">
+                        <a href="${esc(link.original_url)}" target="_blank" title="${esc(link.original_url)}">${esc(link.original_url)}</a>
+                    </td>
+                    <td>${link.total_clicks}</td>
+                    <td>${statusBadge}${expiry}${maxClicks}</td>
+                    <td>${created}</td>
+                    <td>
+                        <div class="actions-cell">
+                            <button class="btn btn-sm btn-secondary" onclick="openEditModal('${esc(link.short_code)}', '${link.expires_at || ''}', ${link.max_clicks || 'null'})">Edit</button>
+                            ${link.is_active ? `<button class="btn btn-sm btn-danger" onclick="openDeleteModal('${esc(link.short_code)}')">Delete</button>` : ''}
+                        </div>
+                    </td>
+                </tr>
+            `;
+        }).join('');
+    }
+
+    function renderPagination(data) {
+        const el = document.getElementById('pagination');
+        const totalPages = Math.ceil(data.total / data.per_page);
+
+        if (totalPages <= 1) {
+            el.innerHTML = '';
+            return;
+        }
+
+        const prevDisabled = currentPage <= 1 ? 'disabled' : '';
+        const nextDisabled = currentPage >= totalPages ? 'disabled' : '';
+
+        el.innerHTML = `
+            <button class="btn btn-sm btn-secondary" ${prevDisabled} onclick="goPage(${currentPage - 1})">&#8592; Prev</button>
+            <span>Page ${currentPage} of ${totalPages}</span>
+            <button class="btn btn-sm btn-secondary" ${nextDisabled} onclick="goPage(${currentPage + 1})">Next &#8594;</button>
+        `;
+    }
+
+    function goPage(page) {
+        currentPage = page;
+        loadLinks();
+    }
+
+    // Edit modal
+    function openEditModal(code, expiresAt, maxClicks) {
+        document.getElementById('editCode').value = code;
+        document.getElementById('editExpiry').value = expiresAt ? expiresAt.slice(0, 16) : '';
+        document.getElementById('editMaxClicks').value = maxClicks || '';
+        document.getElementById('editModal').classList.add('show');
+    }
+
+    function closeEditModal() {
+        document.getElementById('editModal').classList.remove('show');
+    }
+
+    async function saveEdit() {
+        const code = document.getElementById('editCode').value;
+        const expiry = document.getElementById('editExpiry').value;
+        const maxClicks = document.getElementById('editMaxClicks').value;
+
+        const body = {};
+        if (expiry) body.expires_at = new Date(expiry).toISOString();
+        if (maxClicks) body.max_clicks = parseInt(maxClicks);
+
+        const resp = await api(`/links/${code}`, {
+            method: 'PATCH',
+            body: JSON.stringify(body),
+        });
+
+        if (resp && resp.ok) {
+            closeEditModal();
+            await loadLinks();
+        }
+    }
+
+    // Delete modal
+    function openDeleteModal(code) {
+        document.getElementById('deleteCode').textContent = code;
+        document.getElementById('deleteCodeValue').value = code;
+        document.getElementById('deleteModal').classList.add('show');
+    }
+
+    function closeDeleteModal() {
+        document.getElementById('deleteModal').classList.remove('show');
+    }
+
+    async function confirmDelete() {
+        const code = document.getElementById('deleteCodeValue').value;
+        const resp = await api(`/links/${code}`, { method: 'DELETE' });
+
+        if (resp && resp.ok) {
+            closeDeleteModal();
+            await loadLinks();
+        }
+    }
+
+    // Escape HTML
+    function esc(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    }
+</script>
+</body>
+</html>
