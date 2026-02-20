@@ -211,7 +211,7 @@
         </div>
 
         <button class="advanced-toggle" onclick="toggleAdvanced()">
-            <span id="advArrow">▸</span> Custom slug
+            <span id="advArrow">&#9656;</span> Custom slug
         </button>
 
         <div class="advanced-section" id="advancedSection">
@@ -261,7 +261,7 @@
             const section = document.getElementById('advancedSection');
             const arrow = document.getElementById('advArrow');
             section.classList.toggle('open');
-            arrow.textContent = section.classList.contains('open') ? '▾' : '▸';
+            arrow.textContent = section.classList.contains('open') ? '\u25BE' : '\u25B8';
         }
 
         async function shorten() {
